@@ -11,5 +11,8 @@ https://github.com/Jxhao99/DATA620004/tree/mid1
 ## （二）：目标检测
 Faster R-CNN
 
+https://github.com/Jxhao99/DATA620004/tree/faster-rcnn
 
 YOLOV3
+
+https://github.com/Jxhao99/DATA620004/tree/yolo3
