@@ -2,7 +2,14 @@
 
 Wide_ResNet    http://arxiv.org/abs/1605.07146 
 
-## 训练方式
+
+## 文件下载
+
+测试所需的baseline.t7，cutmix.t7，cutout.t7，mixup.t7放到 model_data/cifar100 文件下
+
+下载链接：
+
+## 训练步骤
 
 ```bash
 python main.py  --method baseline #选择数据增强方式 baseline/cutout/cutmix/mixup
@@ -10,7 +17,7 @@ python main.py  --method baseline #选择数据增强方式 baseline/cutout/cutm
 		--depth 28  #Wide_ResNet的depth 一般28/40
 		--widen_factor 10 #Wide_ResNet的宽度，推荐10/14/20
 		--dropout 0.3
-		--dataset cifra100 #默认cifra100，可改为cifra10
+		--dataset cifra100 #默认cifar100，可改为cifar10
 		--num_epochs 200 #训练的epoch数
 		--seed 980038 #随机种子
 		--weight_decay 5e-4
