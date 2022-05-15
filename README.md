@@ -14,7 +14,7 @@ python main.py  --method baseline #选择数据增强方式 baseline/cutout/cutm
 		--num_epochs 200 #训练的epoch数
 		--seed 980038 #随机种子
 		--weight_decay 5e-4
-		-momentum 0.9
+		--momentum 0.9
 ```
 
 
