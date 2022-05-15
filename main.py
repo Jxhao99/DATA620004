@@ -32,15 +32,21 @@ parser.add_argument('--widen_factor', default=10, type=int, help='width of model
 parser.add_argument('--dropout', default=0.3, type=float, help='dropout_rate')
 parser.add_argument('--dataset', default='cifar100', type=str, help='dataset = [cifar10/cifar100]')
 parser.add_argument('--batch_size', default=128, type=int, help='num of batch_size')
+parser.add_argument('--weight_decay', default=5e-4, type=float, help='weight_decay')
+parser.add_argument('--momentum', default=0.9, type=float, help='momentum')
 parser.add_argument('--num_epochs', default=200, type=int, help='num of epochs')
 parser.add_argument('--resume', '-r', action='store_true', help='resume from checkpoint')
 parser.add_argument('--testOnly', '-t', action='store_true', help='Test mode with the saved model')
+parser.add_argument('--seed', default=980038, type=int, help='dropout_rate')
+
 args = parser.parse_args()
 
 # Hyper Parameter settings
 use_cuda = torch.cuda.is_available()
 best_acc = 0
 start_epoch, num_epochs, batch_size, optim_type = cf.start_epoch, cf.num_epochs, cf.batch_size, cf.optim_type
+batch_size = args.batch_size
+num_epochs = args.num_epochs
 
 # Data Uplaod
 print('\n[Phase 1] : Data Preparation')
@@ -56,16 +62,19 @@ transform_test = transforms.Compose([
     transforms.Normalize(cf.mean[args.dataset], cf.std[args.dataset]),
 ])
 
+####设置随机种子
+setup_seed(args.seed)
+print("set seed seuccess!")
 
-if addusersitepackages.method=="baseline":
-    writer = SummaryWriter("runs\baseline")
+if args.method=="baseline":
+    writer = SummaryWriter("runs"+os.sep+"baseline")
 elif args.method=="cutmix":
-    writer = SummaryWriter("runs\cutmix")
+    writer = SummaryWriter("runs"+os.sep+"cutmix")
 elif args.method=="mixup":
-    writer = SummaryWriter("runs\mixup")
+    writer = SummaryWriter("runs"+os.sep+"mixup")
 elif args.method=="cutout":
     transform_train.transforms.append(Cutout(n_holes=1, length=8))
-    writer = SummaryWriter("runs\cutout")
+    writer = SummaryWriter("runs"+os.sep+"cutout")
 
 if(args.dataset == 'cifar10'):
     print("| Preparing CIFAR-10 dataset...")
@@ -87,10 +96,10 @@ net = Wide_ResNet(args.depth,num_classes,args.widen_factor, args.dropout)
 
 # Test only option
 if (args.testOnly):
-    checkpoint = torch.load('./best_model/'+args.method+'.t7')
+    checkpoint = torch.load('./model_data/'+args.dataset + os.sep + args.method+'.t7')
     net = checkpoint['net']
 
-    if use_cuda:
+    if use_cuda: 
         net.cuda()
         net = torch.nn.DataParallel(net, device_ids=range(torch.cuda.device_count()))
         cudnn.benchmark = True
@@ -129,16 +138,16 @@ criterion = nn.CrossEntropyLoss()
 def train(epoch):
     net.train()
     net.training = True
-    optimizer = optim.SGD(net.parameters(), lr=cf.learning_rate(args.lr, epoch), momentum=0.9, weight_decay=5e-4)
+    optimizer = optim.SGD(net.parameters(), lr=cf.learning_rate(args.lr, epoch), momentum=args.momentum, weight_decay=args.weight_decay)
     print('\n=> Training Epoch #%d, LR=%.4f' %(epoch, cf.learning_rate(args.lr, epoch)))
     if args.method=="baseline":
-        return baseline(trainloader,net,criterion,len(trainset),batch_size,num_epochs,optimizer)
+        return baseline(trainloader,net,criterion,len(trainset),batch_size,num_epochs,epoch,optimizer)
     elif args.method=="cutmix":
-        return cutmix(trainloader,net,criterion,len(trainset),batch_size,num_epochs,optimizer)
+        return cutmix(trainloader,net,criterion,len(trainset),batch_size,num_epochs,epoch,optimizer)
     elif args.method=="mixup":
-        return mixup(trainloader,net,criterion,len(trainset),batch_size,num_epochs,optimizer)
+        return mixup(trainloader,net,criterion,len(trainset),batch_size,num_epochs,epoch,optimizer)
     elif args.method=="cutout":
-        return cutout(trainloader,net,criterion,len(trainset),batch_size,num_epochs,optimizer)
+        return cutout(trainloader,net,criterion,len(trainset),batch_size,num_epochs,epoch,optimizer)
 
 def test(epoch):
     global best_acc
@@ -176,7 +185,7 @@ def test(epoch):
             save_point = './checkpoint/'+args.dataset+os.sep
             if not os.path.isdir(save_point):
                 os.mkdir(save_point)
-            torch.save(state, save_point+file_name+'.t7')
+            torch.save(state, save_point+args.method+'.t7')
             best_acc = acc
         return (float(test_loss/(1+batch_idx)), float(correct/total))
 

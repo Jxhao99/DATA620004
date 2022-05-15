@@ -4,6 +4,7 @@ import os
 import numpy as np
 import torch
 from torch.autograd import Variable
+import sys
 
 # from torch.autograd import Variable
 # import torch.backends.cudnn as cudnn
@@ -12,13 +13,14 @@ from torch.autograd import Variable
 # import torchvision.transforms as transforms
 # import torchvision.datasets as datasets
 
-
-def mixup_data(x, y, alpha=1.0, use_cuda=True):
+use_cuda = torch.cuda.is_available()
+def mixup_data(x, y, alpha=1.0):
     if alpha > 0:
         lam = np.random.beta(alpha, alpha)
     else:
         lam = 1
-    index = torch.randperm(200).cuda()
+    batch_size = x.size()[0]
+    index = torch.randperm(batch_size).cuda()
     mixed_x = lam * x + (1 - lam) * x[index, :]
     y_a, y_b = y, y[index]
     return mixed_x, y_a, y_b, lam
@@ -44,6 +46,13 @@ def rand_bbox(size, lam):
     bby2 = np.clip(cy + cut_h // 2, 0, H)
 
     return bbx1, bby1, bbx2, bby2
+
+
+def setup_seed(seed):
+     torch.manual_seed(seed)
+     torch.cuda.manual_seed_all(seed)
+     np.random.seed(seed)
+     torch.backends.cudnn.deterministic = True
 
 
 class Cutout(object):
@@ -85,7 +94,7 @@ class Cutout(object):
 
 
 
-def baseline(trainloader,net,criterion,N,batch_size,num_epochs):
+def baseline(trainloader,net,criterion,N,batch_size,num_epochs,epoch,optimizer):
     train_loss = 0
     correct = 0
     total = 0
@@ -110,10 +119,10 @@ def baseline(trainloader,net,criterion,N,batch_size,num_epochs):
                     (N//batch_size)+1, loss.item(), 100.*correct/total))
         sys.stdout.flush()
 
-        return (float(train_loss/(1+batch_idx)), float(correct/total)) 
+    return (float(train_loss/(1+batch_idx)), float(correct/total)) 
     
     
-def cutmix(trainloader,net,criterion,N,batch_size,num_epochs,optimizer):
+def cutmix(trainloader,net,criterion,N,batch_size,num_epochs,epoch,optimizer):
     train_loss = 0
     correct = 0
     total = 0
@@ -156,19 +165,18 @@ def cutmix(trainloader,net,criterion,N,batch_size,num_epochs,optimizer):
         sys.stdout.write('\r')
         sys.stdout.write('| Epoch [%3d/%3d] Iter[%3d/%3d]\t\tLoss: %.4f Acc@1: %.3f%%'
                 %(epoch, num_epochs, batch_idx+1,
-                    (len(trainset)//batch_size)+1, loss.item(), 100.*correct/total))
+                    (N//batch_size)+1, loss.item(), 100.*correct/total))
         sys.stdout.flush()
     return (float(train_loss/(1+batch_idx)), float(correct/total)) 
 
 
-def mixup(trainloader,net,criterion,N,batch_size,num_epochs):
+def mixup(trainloader,net,criterion,N,batch_size,num_epochs,epoch,optimizer):
     train_loss = 0
     correct = 0
     total = 0
     for batch_idx, (inputs, targets) in enumerate(trainloader):
         inputs, targets = inputs.cuda(), targets.cuda()
-        inputs, targets_a, targets_b, lam = mixup_data(inputs, targets,
-                                                       1.0)
+        inputs, targets_a, targets_b, lam = mixup_data(inputs, targets,1.0)
         inputs, targets_a, targets_b = map(Variable, (inputs,
                                                       targets_a, targets_b))
         outputs = net(inputs)
@@ -186,12 +194,12 @@ def mixup(trainloader,net,criterion,N,batch_size,num_epochs):
         sys.stdout.write('\r')
         sys.stdout.write('| Epoch [%3d/%3d] Iter[%3d/%3d]\t\tLoss: %.4f Acc@1: %.3f%%'
                 %(epoch, num_epochs, batch_idx+1,
-                    (len(trainset)//batch_size)+1, loss.item(), 100.*correct/total))
+                    (N//batch_size)+1, loss.item(), 100.*correct/total))
         sys.stdout.flush()
     return (float(train_loss/(1+batch_idx)), float(correct/total))
 
 
-def cutout(trainloader,net,criterion,N,batch_size,num_epochs):
+def cutout(trainloader,net,criterion,N,batch_size,num_epochs,epoch,optimizer):
     train_loss = 0
     correct = 0
     total = 0
@@ -216,4 +224,4 @@ def cutout(trainloader,net,criterion,N,batch_size,num_epochs):
                     (N//batch_size)+1, loss.item(), 100.*correct/total))
         sys.stdout.flush()
 
-        return (float(train_loss/(1+batch_idx)), float(correct/total)) 
+    return (float(train_loss/(1+batch_idx)), float(correct/total)) 
