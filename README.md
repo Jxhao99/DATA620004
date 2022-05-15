@@ -2,7 +2,7 @@
 
 Wide_ResNet    http://arxiv.org/abs/1605.07146 
 
-## 运行方式
+## 训练方式
 
 ```bash
 python main.py  --method baseline #选择数据增强方式 baseline/cutout/cutmix/mixup
