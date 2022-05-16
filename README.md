@@ -51,9 +51,9 @@ python main.py --t
 | network           | method   | epochs | accuracy% |
 | :---------------- | -------- | -----  | --------- |
 | wide-resnet 28x10 | baseline | 200    | 81.34     |
-| wide-resnet 28x10 | cutout   | 200    |           |
+| wide-resnet 28x10 | cutout   | 200    | 81.94     |
 | wide-resnet 28x10 | cutmix   | 200    | 83.71     |
-| wide-resnet 28x10 | mixup    | 200    |           |
+| wide-resnet 28x10 | mixup    | 200    | 82.73     |
 
 
 
