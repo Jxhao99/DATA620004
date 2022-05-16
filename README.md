@@ -34,13 +34,28 @@ VOC数据集下载地址如下，里面已经包括了训练集、测试集、�
 1. 数据集的准备   
 **本文使用VOC格式进行训练，训练前需要下载好VOC07+12的数据集，解压后放在根目录**  
 
-2. 数据集的处理   
-修改voc_annotation.py里面的annotation_mode=2，运行voc_annotation.py生成根目录下的2007_train.txt和2007_val.txt。   
-
-3. 开始网络训练   
+2. 开始网络训练   
 train.py的默认参数用于训练VOC数据集，直接运行train.py即可开始训练。   
+  ```bash
+  python main.py  --train_gpu [0,] #训练的gpu选择
+  		--model_path '' #预训练，则为空
+  		--pretrained True #是否预训练
+  		--backbone resnet50 #主干网络 resnet50/vgg16
+  		--Freeze_Epoch 50 #解冻训练的轮数，ps.解冻训练是指对所有参数训练
+  		--Freeze_batch_size 4
+  		--UnFreeze_Epoch #冻结训练的轮数，ps.冻结训练时冻结主干网络的参数
+  		--Unfreeze_batch_size 2
+  		--Init_lr 1e-4 #模型最大学习率
+  		--Min_lr Init_lr*0.01 #模型最小学习率
+  		--Freeze_Train True #是否解冻训练
+  		--optimizer_type "adam" #优化器 adam/sgd
+  		--momentum 0.9
+  		--weight_decay 0
+  		--lr_decay_type "cos" #学习率衰减方式 cos/step
+  		--num_workers 4
+  ```
 
-4. 训练结果预测   
+3. 训练结果预测   
 训练结果预测需要用到两个文件，分别是frcnn.py和predict.py。我们首先需要去frcnn.py里面修改model_path以及classes_path，这两个参数必须要修改。   
 **model_path指向训练好的权值文件，在logs文件夹里。   
 classes_path指向检测类别所对应的txt。**   
